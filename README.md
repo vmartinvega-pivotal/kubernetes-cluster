@@ -41,6 +41,21 @@ Execute the following command to remove the virtual machines created for the Kub
 vagrant destroy -f
 ```
 
+## openebs and helm tomcat
+
+```
+kubectl apply -f https://openebs.github.io/charts/openebs-operator-1.7.0.yaml
+```
+
+Add the repo
+```
+helm repo add bitnami https://charts.bitnami.com/bitnami
+```
+
+```
+helm install my-tomcat --set tomcatUser=manager,tomcatPassword=changeme,persistence.storageClass=openebs-hostpath,persistence.size=1Gi,service.nodePort=32000 bitnami/tomcat
+```
+
 You can destroy individual machines by vagrant destroy k8s-node-1 -f
 
 ## Licensing
