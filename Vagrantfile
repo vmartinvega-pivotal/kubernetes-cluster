@@ -75,20 +75,21 @@ $configureMaster = <<-SCRIPT
 	sudo bash -c " echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf"
     sudo sysctl -p
 
-    kubeadm init 
+    # ip of this box
+    IP_ADDR=`ifconfig enp0s8 | grep Mask | awk '{print $2}'| cut -f2 -d:`
 	
+    # install k8s master
+    HOST_NAME=$(hostname -s)
+    
+	kubeadm init --apiserver-advertise-address=$IP_ADDR --apiserver-cert-extra-sans=$IP_ADDR  --node-name $HOST_NAME --pod-network-cidr=10.244.0.0/16
+    	
     #copying credentials to regular user - vagrant
 	sudo -H -u vagrant bash -c 'mkdir -p $HOME/.kube'
     sudo -H -u vagrant bash -c 'sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config'
     sudo -H -u vagrant bash -c 'sudo chown $(id -u):$(id -g) $HOME/.kube/config'
 	sudo -H -u vagrant bash -c 'source <(kubectl completion bash)'
-    
-	# Install weave
-	VERSION=$(sudo -H -u vagrant bash -c 'kubectl version | base64 | tr -d "\n"')
-	echo "sudo -H -u vagrant bash -c \'kubectl apply -f \"https://cloud.weave.works/k8s/net?k8s-version=$VERSION\"\'" > weave.sh
-	chmod +x weave.sh
-	./weave.sh
-	rm weave.sh
+	
+	sudo -H -u vagrant bash -c 'kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml'
 	
     kubeadm token create --print-join-command >> /etc/kubeadm_join_cmd.sh
     chmod +x /etc/kubeadm_join_cmd.sh
