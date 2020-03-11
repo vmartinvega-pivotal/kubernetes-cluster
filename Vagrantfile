@@ -42,7 +42,13 @@ servers = [
 
 # This script to install k8s using kubeadm will get executed after a box is provisioned
 $configureBox = <<-SCRIPT
+	echo ""
+	echo ""
+	echo "####################"
 	echo "This is configureBox"
+	echo "####################"
+	echo ""
+	echo ""
 	
 	apt-get install -y git 
 	
@@ -118,7 +124,13 @@ EOF
 SCRIPT
 
 $configureMaster = <<-SCRIPT
+	echo ""
+	echo ""
+	echo "#######################"
 	echo "This is configureMaster"
+	echo "#######################"
+	echo ""
+	echo ""
 
     # Ip forward enabled
 	sudo bash -c " echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf"
@@ -157,17 +169,30 @@ $configureMaster = <<-SCRIPT
 SCRIPT
 
 $configureNode = <<-SCRIPT
+	echo ""
+	echo ""
+	echo "#####################"
     echo "This is configureNode"
+	echo "#####################"
+	echo ""
+	echo ""
 	
 	apt-get install -y sshpass
 	
-    sshpass -p "vagrant" scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
+	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
+
     sh ./kubeadm_join_cmd.sh
-	
+
 SCRIPT
 
-$configureGluster = <<-SCRIPT
-	echo "This is configureGluster"
+$configurePasswordlessMaster = <<-SCRIPT
+	echo ""
+	echo ""
+	echo "###################################"
+	echo "This is configurePasswordlessMaster"
+	echo "###################################"
+	echo ""
+	echo ""
 
 	apt-get install -y sshpass
 	sudo -H -u vagrant bash -c 'git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster'
@@ -175,6 +200,27 @@ $configureGluster = <<-SCRIPT
 	chmod +x kubernetes-cluster/gk-deploy
 	chmod +x kubernetes-cluster/configure-glusterfs.sh
 	
+	#./kubernetes-cluster/configure-glusterfs.sh
+	#./kubernetes-cluster/passwordless.sh
+		
+SCRIPT
+
+$configurePasswordlessNode = <<-SCRIPT
+	echo ""
+	echo ""
+	echo "#################################"
+	echo "This is configurePasswordlessNode"
+	echo "#################################"
+	echo ""
+	echo ""
+
+	apt-get install -y sshpass
+	sudo -H -u vagrant bash -c 'git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster'
+	chmod +x kubernetes-cluster/passwordless.sh
+	
+	#./kubernetes-cluster/passwordless.sh
+	
+	#rm -Rf kubernetes-cluster
 SCRIPT
 
 Vagrant.configure("2") do |config|
@@ -211,10 +257,19 @@ Vagrant.configure("2") do |config|
 
             if opts[:type] == "master"
                 config.vm.provision "shell", inline: $configureMaster
-				config.vm.provision "shell", inline: $configureGluster
             else
                 config.vm.provision "shell", inline: $configureNode
             end
         end
     end
+	
+	servers.each do |opts|
+        config.vm.define opts[:name] do |config|
+			if opts[:type] == "master"
+                config.vm.provision "shell", inline: $configurePasswordlessMaster
+            else
+                config.vm.provision "shell", inline: $configurePasswordlessNode
+            end
+		end
+	end
 end 
