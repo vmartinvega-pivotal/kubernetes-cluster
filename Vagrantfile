@@ -151,6 +151,7 @@ $configureGluster = <<-SCRIPT
 SCRIPT
 
 $configureHetaki = <<-SCRIPT
+	git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster
 SCRIPT
 
 Vagrant.configure("2") do |config|
