@@ -3,7 +3,7 @@
 
 servers = [
     {
-        :name => "k8s-head",
+        :name => "master",
         :type => "master",
         :box => "ubuntu/xenial64",
         :box_version => "20180831.0.0",
@@ -12,28 +12,38 @@ servers = [
         :cpu => "2"
     },
     {
-        :name => "k8s-node-1",
+        :name => "node0",
         :type => "node",
         :box => "ubuntu/xenial64",
         :box_version => "20180831.0.0",
         :eth1 => "192.168.205.11",
-        :mem => "2048",
-        :cpu => "2"
+        :mem => "4096",
+        :cpu => "4"
     },
     {
-        :name => "k8s-node-2",
+        :name => "node1",
         :type => "node",
         :box => "ubuntu/xenial64",
         :box_version => "20180831.0.0",
         :eth1 => "192.168.205.12",
-        :mem => "2048",
-        :cpu => "2"
+        :mem => "4096",
+        :cpu => "4"
+    },
+	{
+        :name => "node2",
+        :type => "node",
+        :box => "ubuntu/xenial64",
+        :box_version => "20180831.0.0",
+        :eth1 => "192.168.205.13",
+        :mem => "4096",
+        :cpu => "4"
     }
 ]
 
 # This script to install k8s using kubeadm will get executed after a box is provisioned
 $configureBox = <<-SCRIPT
-
+	apt-get install git
+	
     # install docker
     curl -fsSL https://get.docker.com -o get-docker.sh
     sh ./get-docker.sh
@@ -111,8 +121,36 @@ SCRIPT
 $configureNode = <<-SCRIPT
     echo "This is worker"
     apt-get install -y sshpass
+	# Install glusterFS
+	apt-get install xfsprogs attr -y
+	apt-get install glusterfs-server glusterfs-client glusterfs-common -y
+	systemctl enable glusterfs-server
+	
+	mkfs.xfs /dev/sdc
+	mkfs.xfs /dev/sdd
+	mkfs.xfs /dev/sde
+	
+	mkdir -p /gluster/{c,d,e}
+	
+	su -c 'echo "/dev/sdc /gluster/c xfs defaults 0 0" >> /etc/fstab'
+	su -c 'echo "/dev/sdd /gluster/d xfs defaults 0 0" >> /etc/fstab'
+	su -c 'echo "/dev/sde /gluster/e xfs defaults 0 0" >> /etc/fstab'
+	
+	mount -a
+	
+	mkdir /gluster/{c,d,e}/brick
+	
     sshpass -p "vagrant" scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
     sh ./kubeadm_join_cmd.sh
+SCRIPT
+
+$configureGluster = <<-SCRIPT
+	gluster peer probe 192.168.205.11
+	gluster peer probe 192.168.205.12
+	gluster peer probe 192.168.205.13
+SCRIPT
+
+$configureHetaki = <<-SCRIPT
 SCRIPT
 
 Vagrant.configure("2") do |config|
@@ -131,9 +169,19 @@ Vagrant.configure("2") do |config|
             	v.customize ["modifyvm", :id, "--groups", "/Vicente"]
                 v.customize ["modifyvm", :id, "--memory", opts[:mem]]
                 v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
-
+				
+				if opts[:type] == "node"
+					DISKS = 3
+					NAME = opts[:name]
+					(0..DISKS-1).each do |d|
+						unless File.exist?("disk-#{NAME}-#{d}.vdi")
+							v.customize [ "createmedium", "--filename", "disk-#{NAME}-#{d}.vdi", "--size", 1024*1024 ]
+						end
+						v.customize [ "storageattach", :id, "--storagectl", "SCSI", "--port", 3+d, "--device", 0, "--type", "hdd", "--medium", "disk-#{NAME}-#{d}.vdi" ]
+					end
+				end
             end
-
+			
             # we cannot use this because we can't install the docker version we want - https://github.com/hashicorp/vagrant/issues/4871
             #config.vm.provision "docker"
 
@@ -143,10 +191,21 @@ Vagrant.configure("2") do |config|
                 config.vm.provision "shell", inline: $configureMaster
             else
                 config.vm.provision "shell", inline: $configureNode
+				if opts[:type] == "node2"
+					config.vm.provision "shell", inline: $configureNode
+				end
             end
 
         end
 
     end
+	
+	servers.each do |opts|
+        config.vm.define opts[:name] do |config|
+			if opts[:type] == "master"
+                config.vm.provision "shell", inline: $configureHetaki
+            end
+		end
+	end
 
 end 
