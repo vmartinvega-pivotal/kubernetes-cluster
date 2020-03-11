@@ -160,6 +160,7 @@ $configureNode = <<-SCRIPT
     echo "This is configureNode"
 	
 	apt-get install -y sshpass
+	
     sshpass -p "vagrant" scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
     sh ./kubeadm_join_cmd.sh
 	
@@ -170,6 +171,9 @@ $configureGluster = <<-SCRIPT
 
 	apt-get install -y sshpass
 	sudo -H -u vagrant bash -c 'git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster'
+	chmod +x kubernetes-cluster/passwordless.sh
+	chmod +x kubernetes-cluster/gk-deploy
+	chmod +x kubernetes-cluster/configure-glusterfs.sh
 	
 SCRIPT
 
