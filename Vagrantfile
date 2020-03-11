@@ -87,39 +87,12 @@ EOF
     # keep swap off after reboot
     sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
     sudo systemctl restart kubelet
-	
-	# Install glusterFS
-	apt-get install xfsprogs attr -y
-	apt-get install glusterfs-server glusterfs-client glusterfs-common -y
-	systemctl enable glusterfs-server
-	
-	mkfs.xfs /dev/sdc
-	mkfs.xfs /dev/sdd
-	mkfs.xfs /dev/sde
-	
-	mkdir -p /gluster/{c,d,e}
-	
-	su -c 'echo "/dev/sdc /gluster/c xfs defaults 0 0" >> /etc/fstab'
-	su -c 'echo "/dev/sdd /gluster/d xfs defaults 0 0" >> /etc/fstab'
-	su -c 'echo "/dev/sde /gluster/e xfs defaults 0 0" >> /etc/fstab'
-	
-	mount -a
-	
-	mkdir /gluster/{c,d,e}/brick
-	
+		
 	# Enable user/password login and reset password
 	sed -i "s/.*PasswordAuthentication.*/PasswordAuthentication yes/g" /etc/ssh/sshd_config
 	sed -i "s/.*PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config
 	echo "vagrant:changeme" | sudo chpasswd
 	service sshd restart
-	
-	modprobe dm_snapshot
-	modprobe dm_mirror
-	modprobe dm_thin_pool
-	
-	echo dm_snapshot | sudo tee -a /etc/modules
-	echo dm_mirror | sudo tee -a /etc/modules
-	echo dm_thin_pool | sudo tee -a /etc/modules
 	
 SCRIPT
 
@@ -179,30 +152,37 @@ $configureNode = <<-SCRIPT
 	
 	apt-get install -y sshpass
 	
+	# Install glusterFS
+	apt-get install xfsprogs attr -y
+	apt-get install glusterfs-server glusterfs-client glusterfs-common -y
+	systemctl enable glusterfs-server
+	
+	mkfs.xfs /dev/sdc
+	mkfs.xfs /dev/sdd
+	mkfs.xfs /dev/sde
+	
+	mkdir -p /gluster/{c,d,e}
+	
+	su -c 'echo "/dev/sdc /gluster/c xfs defaults 0 0" >> /etc/fstab'
+	su -c 'echo "/dev/sdd /gluster/d xfs defaults 0 0" >> /etc/fstab'
+	su -c 'echo "/dev/sde /gluster/e xfs defaults 0 0" >> /etc/fstab'
+	
+	mount -a
+	
+	mkdir /gluster/{c,d,e}/brick
+	
+	modprobe dm_snapshot
+	modprobe dm_mirror
+	modprobe dm_thin_pool
+	
+	echo dm_snapshot | sudo tee -a /etc/modules
+	echo dm_mirror | sudo tee -a /etc/modules
+	echo dm_thin_pool | sudo tee -a /etc/modules
+	
 	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
 
     sh ./kubeadm_join_cmd.sh
 
-SCRIPT
-
-$configurePasswordlessMaster = <<-SCRIPT
-	echo ""
-	echo ""
-	echo "###################################"
-	echo "This is configurePasswordlessMaster"
-	echo "###################################"
-	echo ""
-	echo ""
-
-	apt-get install -y sshpass
-	sudo -H -u vagrant bash -c 'git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster'
-	chmod +x kubernetes-cluster/passwordless.sh
-	chmod +x kubernetes-cluster/gk-deploy
-	chmod +x kubernetes-cluster/configure-glusterfs.sh
-	
-	#./kubernetes-cluster/configure-glusterfs.sh
-	#./kubernetes-cluster/passwordless.sh
-		
 SCRIPT
 
 $configurePasswordlessNode = <<-SCRIPT
@@ -217,10 +197,12 @@ $configurePasswordlessNode = <<-SCRIPT
 	apt-get install -y sshpass
 	sudo -H -u vagrant bash -c 'git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster'
 	chmod +x kubernetes-cluster/passwordless.sh
+	chmod +x kubernetes-cluster/gk-deploy
+	chmod +x kubernetes-cluster/configure-glusterfs.sh
 	
+	#./kubernetes-cluster/configure-glusterfs.sh
 	#./kubernetes-cluster/passwordless.sh
-	
-	#rm -Rf kubernetes-cluster
+		
 SCRIPT
 
 Vagrant.configure("2") do |config|
@@ -240,13 +222,16 @@ Vagrant.configure("2") do |config|
                 v.customize ["modifyvm", :id, "--memory", opts[:mem]]
                 v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
 				
+				# Añadimos discos a lso nodos (no al master)
 				DISKS = 3
 				NAME = opts[:name]
 				(0..DISKS-1).each do |d|
-					unless File.exist?("disk-#{NAME}-#{d}.vdi")
-						v.customize [ "createmedium", "--filename", "disk-#{NAME}-#{d}.vdi", "--size", 1024*1024 ]
+					if opts[:type] == "node"
+						unless File.exist?("disk-#{NAME}-#{d}.vdi")
+							v.customize [ "createmedium", "--filename", "disk-#{NAME}-#{d}.vdi", "--size", 1024*1024 ]
+						end
+						v.customize [ "storageattach", :id, "--storagectl", "SCSI", "--port", 3+d, "--device", 0, "--type", "hdd", "--medium", "disk-#{NAME}-#{d}.vdi" ]
 					end
-					v.customize [ "storageattach", :id, "--storagectl", "SCSI", "--port", 3+d, "--device", 0, "--type", "hdd", "--medium", "disk-#{NAME}-#{d}.vdi" ]
 				end
             end
 			
@@ -263,13 +248,5 @@ Vagrant.configure("2") do |config|
         end
     end
 	
-	servers.each do |opts|
-        config.vm.define opts[:name] do |config|
-			if opts[:type] == "master"
-                config.vm.provision "shell", inline: $configurePasswordlessMaster
-            else
-                config.vm.provision "shell", inline: $configurePasswordlessNode
-            end
-		end
-	end
+    config.vm.provision "shell", inline: $configurePasswordlessNode
 end 

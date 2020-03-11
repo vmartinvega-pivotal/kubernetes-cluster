@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-gluster peer probe 192.168.205.10
-gluster peer probe 192.168.205.11
-gluster peer probe 192.168.205.12
-gluster peer probe 192.168.205.13
+sudo gluster peer probe 192.168.205.11
+sudo gluster peer probe 192.168.205.12
+sudo gluster peer probe 192.168.205.13
