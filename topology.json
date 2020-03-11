@@ -55,6 +55,24 @@
             "/dev/vdd",
             "/dev/vde"
           ]
+        },
+		{
+          "node": {
+            "hostnames": {
+              "manage": [
+                "master"
+              ],
+              "storage": [
+                "192.168.205.10"
+              ]
+            },
+            "zone": 1
+          },
+          "devices": [
+            "/dev/vdc",
+            "/dev/vdd",
+            "/dev/vde"
+          ]
         }
       ]
     }
