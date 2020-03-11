@@ -42,7 +42,9 @@ servers = [
 
 # This script to install k8s using kubeadm will get executed after a box is provisioned
 $configureBox = <<-SCRIPT
-	apt-get install git
+	echo "This is configureBox"
+	
+	apt-get install -y git 
 	
     # install docker
     curl -fsSL https://get.docker.com -o get-docker.sh
@@ -50,7 +52,7 @@ $configureBox = <<-SCRIPT
 	rm get-docker.sh
 	
     # run docker commands as vagrant user (sudo not required)
-    usermod -aG docker vagrant
+    usermod -aG docker vagrantconfigureBox
 	
 	sysctl net.bridge.bridge-nf-call-iptables=1
 	
@@ -105,9 +107,19 @@ EOF
 	echo "vagrant:changeme" | sudo chpasswd
 	service sshd restart
 	
+	modprobe dm_snapshot
+	modprobe dm_mirror
+	modprobe dm_thin_pool
+	
+	echo dm_snapshot | sudo tee -a /etc/modules
+	echo dm_mirror | sudo tee -a /etc/modules
+	echo dm_thin_pool | sudo tee -a /etc/modules
+	
 SCRIPT
 
 $configureMaster = <<-SCRIPT
+	echo "This is configureMaster"
+
     # Ip forward enabled
 	sudo bash -c " echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf"
     sudo sysctl -p
@@ -145,26 +157,20 @@ $configureMaster = <<-SCRIPT
 SCRIPT
 
 $configureNode = <<-SCRIPT
-    echo "This is worker"
-    apt-get install -y sshpass
+    echo "This is configureNode"
+	
+	apt-get install -y sshpass
     sshpass -p "vagrant" scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
     sh ./kubeadm_join_cmd.sh
 	
 SCRIPT
 
 $configureGluster = <<-SCRIPT
-	gluster peer probe 192.168.205.10
-	gluster peer probe 192.168.205.11
-	gluster peer probe 192.168.205.12
-	gluster peer probe 192.168.205.13
-	
-SCRIPT
+	echo "This is configureGluster"
 
-$passwordlessConf = <<-SCRIPT
-	git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster
-	cd kubernetes-cluster
-	chmod +x passwordless.sh
-	./passwordless.sh
+	apt-get install -y sshpass
+	sudo -H -u vagrant bash -c 'git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster'
+	
 SCRIPT
 
 Vagrant.configure("2") do |config|
@@ -201,19 +207,10 @@ Vagrant.configure("2") do |config|
 
             if opts[:type] == "master"
                 config.vm.provision "shell", inline: $configureMaster
+				config.vm.provision "shell", inline: $configureGluster
             else
                 config.vm.provision "shell", inline: $configureNode
             end
         end
     end
-	
-	servers.each do |opts|
-        config.vm.define opts[:name] do |config|
-			config.vm.provision "shell", inline: $passwordlessConf
-			if opts[:type] == "master"
-				config.vm.provision "shell", inline: $configureGluster
-            end
-		end
-	end
-
 end 
