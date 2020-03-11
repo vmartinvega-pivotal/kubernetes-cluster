@@ -92,7 +92,13 @@ EOF
 	sed -i "s/.*PasswordAuthentication.*/PasswordAuthentication yes/g" /etc/ssh/sshd_config
 	sed -i "s/.*PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config
 	echo "vagrant:changeme" | sudo chpasswd
+	echo "root:changeme" | sudo chpasswd
 	service sshd restart
+	
+	echo "192.168.205.10 master master" >> /etc/hosts
+	echo "192.168.205.11 node0 node0" >> /etc/hosts
+	echo "192.168.205.12 node1 node1" >> /etc/hosts
+	echo "192.168.205.13 node2 node2" >> /etc/hosts
 	
 SCRIPT
 
@@ -178,6 +184,8 @@ $configureNode = <<-SCRIPT
 	echo dm_snapshot | sudo tee -a /etc/modules
 	echo dm_mirror | sudo tee -a /etc/modules
 	echo dm_thin_pool | sudo tee -a /etc/modules
+	
+	mkdir -p /data/heketi/{db,.ssh} && chmod 700 /data/heketi/.ssh
 	
 	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
 

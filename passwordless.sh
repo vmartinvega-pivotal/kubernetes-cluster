@@ -16,6 +16,15 @@
 
 rm -f /home/$USER/.ssh/id_rsa
 ssh-keygen -t rsa -b 2048 -N "" -f /home/$USER/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.10 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.11 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.12 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.13 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
+
+sudo su -
+rm -f /home/$USER/.ssh/id_rsa
+ssh-keygen -t rsa -b 2048 -N "" -f /home/$USER/.ssh/id_rsa
+cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.10 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.11 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.12 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.13 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"

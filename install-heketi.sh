@@ -14,10 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-sudo gluster peer probe 192.168.205.11
-sudo gluster peer probe 192.168.205.12
-sudo gluster peer probe 192.168.205.13
-
-kubectl label node node0 storagenode=glusterfs
-kubectl label node node1 storagenode=glusterfs
-kubectl label node node2 storagenode=glusterfs
+sudo ssh-keygen -t rsa -b 2048 -N "" -f /data/heketi/.ssh/id_rsa
+for NODE in node0 node1 node2; do scp -r /data/heketi/.ssh root@${NODE}:/data/heketi; done
+for NODE in node0 node1 node2; do cat /data/heketi/.ssh/id_rsa.pub | ssh root@${NODE} "cat >> /root/.ssh/authorized_keys"; done
+kubectl apply -f kubernetes/heketi-secret.yaml
+kubectl apply -f kubernetes/heketi-deployment.json
