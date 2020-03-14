@@ -100,6 +100,10 @@ EOF
 	echo "192.168.205.12 node1 node1" >> /etc/hosts
 	echo "192.168.205.13 node2 node2" >> /etc/hosts
 	
+	mkdir -p /data/heketi/{db,.ssh} && chmod 700 /data/heketi/.ssh
+	
+	apt-get install python-minimal
+	
 SCRIPT
 
 $configureMaster = <<-SCRIPT
@@ -185,8 +189,6 @@ $configureNode = <<-SCRIPT
 	echo dm_mirror | sudo tee -a /etc/modules
 	echo dm_thin_pool | sudo tee -a /etc/modules
 	
-	mkdir -p /data/heketi/{db,.ssh} && chmod 700 /data/heketi/.ssh
-	
 	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
 
     sh ./kubeadm_join_cmd.sh
@@ -204,6 +206,7 @@ $configurePasswordlessNode = <<-SCRIPT
 
 	apt-get install -y sshpass
 	sudo -H -u vagrant bash -c 'git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster'
+	sudo -H -u vagrant bash -c 'git clone https://github.com/vmartinvega-pivotal/gluster-kubernetes'
 	chmod +x kubernetes-cluster/passwordless.sh
 	chmod +x kubernetes-cluster/gk-deploy
 	chmod +x kubernetes-cluster/configure-glusterfs.sh
