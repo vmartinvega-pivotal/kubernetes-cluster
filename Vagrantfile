@@ -102,7 +102,10 @@ EOF
 	
 	mkdir -p /data/heketi/{db,.ssh} && chmod 700 /data/heketi/.ssh
 	
-	apt-get install python-minimal
+	apt-get install python-minimal -y
+	
+	git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster
+	git clone https://github.com/vmartinvega-pivotal/gluster-kubernetes
 	
 SCRIPT
 
@@ -195,27 +198,6 @@ $configureNode = <<-SCRIPT
 
 SCRIPT
 
-$configurePasswordlessNode = <<-SCRIPT
-	echo ""
-	echo ""
-	echo "#################################"
-	echo "This is configurePasswordlessNode"
-	echo "#################################"
-	echo ""
-	echo ""
-
-	apt-get install -y sshpass
-	sudo -H -u vagrant bash -c 'git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster'
-	sudo -H -u vagrant bash -c 'git clone https://github.com/vmartinvega-pivotal/gluster-kubernetes'
-	chmod +x kubernetes-cluster/passwordless.sh
-	chmod +x kubernetes-cluster/gk-deploy
-	chmod +x kubernetes-cluster/configure-glusterfs.sh
-	
-	#./kubernetes-cluster/configure-glusterfs.sh
-	#./kubernetes-cluster/passwordless.sh
-		
-SCRIPT
-
 Vagrant.configure("2") do |config|
 
     servers.each do |opts|
@@ -258,6 +240,4 @@ Vagrant.configure("2") do |config|
             end
         end
     end
-	
-    config.vm.provision "shell", inline: $configurePasswordlessNode
 end 
