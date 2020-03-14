@@ -14,16 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-rm -f /home/$USER/.ssh/id_rsa
-ssh-keygen -t rsa -b 2048 -N "" -f /home/$USER/.ssh/id_rsa
-cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.10 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
-cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.11 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
-cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.12 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
-cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.13 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
-
-sudo su -
-rm -f /home/$USER/.ssh/id_rsa
-ssh-keygen -t rsa -b 2048 -N "" -f /home/$USER/.ssh/id_rsa
+rm -f ~/.ssh/id_rsa
+mkdir -p ~/.ssh/
+rm -f ~/.ssh/known_hosts
+ssh-keygen -t rsa -b 2048 -N "" -f ~/.ssh/id_rsa
 cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.10 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.11 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@192.168.205.12 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
