@@ -107,6 +107,9 @@ EOF
 	git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster
 	git clone https://github.com/vmartinvega-pivotal/gluster-kubernetes
 	
+	sudo chown -R vagrant:vagrant kubernetes-cluster
+	sudo chown -R vagrant:vagrant gluster-kubernetes
+	
 SCRIPT
 
 $configureMaster = <<-SCRIPT
