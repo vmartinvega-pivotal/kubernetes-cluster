@@ -21,3 +21,4 @@ kubectl label node node2 storagenode=glusterfs
 ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node0"
 ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node1"
 ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node2"
+

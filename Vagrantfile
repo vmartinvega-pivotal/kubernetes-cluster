@@ -5,8 +5,8 @@ servers = [
     {
         :name => "master",
         :type => "master",
-        :box => "ubuntu/xenial64",
-        :box_version => "20180831.0.0",
+        :box => "centos/7",
+        :box_version => "1905.1",
         :eth1 => "192.168.205.10",
         :mem => "2048",
         :cpu => "2"
@@ -14,8 +14,8 @@ servers = [
     {
         :name => "node0",
         :type => "node",
-        :box => "ubuntu/xenial64",
-        :box_version => "20180831.0.0",
+        :box => "centos/7",
+        :box_version => "1905.1",
         :eth1 => "192.168.205.11",
         :mem => "4096",
         :cpu => "4"
@@ -23,8 +23,8 @@ servers = [
     {
         :name => "node1",
         :type => "node",
-        :box => "ubuntu/xenial64",
-        :box_version => "20180831.0.0",
+        :box => "centos/7",
+        :box_version => "1905.1",
         :eth1 => "192.168.205.12",
         :mem => "4096",
         :cpu => "4"
@@ -32,8 +32,8 @@ servers = [
 	{
         :name => "node2",
         :type => "node",
-        :box => "ubuntu/xenial64",
-        :box_version => "20180831.0.0",
+        :box => "centos/7",
+        :box_version => "1905.1",
         :eth1 => "192.168.205.13",
         :mem => "4096",
         :cpu => "4"
@@ -44,71 +44,150 @@ servers = [
 $configureBox = <<-SCRIPT
 	echo ""
 	echo ""
-	echo "####################"
-	echo "This is configureBox"
-	echo "####################"
+	echo "#####################"
+	echo " CONFIGURE COMMON BOX"
+	echo "#####################"
 	echo ""
 	echo ""
+
+	echo "##################### Install basic packages ##################### "
+	yum install epel-release -y
+	yum install glusterfs-client -y
+	yum install -y gluster-client gcc zlib zlib-devel openssl openssl-devel net-tools sshpass vim git screen iptables iptables-utils iptables-services wget
 	
-	apt-get install -y git 
+	echo "##################### Install Python 2.7.13 and 3.6.2 ##################### "
+	wget https://www.python.org/ftp/python/2.7.13/Python-2.7.13.tgz
+	wget https://www.python.org/ftp/python/3.6.2/Python-3.6.2.tgz
+	tar -xvf Python-2.7.13.tgz
+	tar -xvf Python-3.6.2.tgz
+	cd Python-2.7.13
+	./configure --prefix=/usr/local
+	make altinstall
+	cd ..
+	cd Python-3.6.2
+	./configure --prefix=/usr/local
+	make altinstall
+	cd ..
+	ln -s /usr/local/bin/python3.6 /usr/bin/python3.6
+	wget "https://bootstrap.pypa.io/get-pip.py"
+	/usr/local/bin/python2.7 get-pip.py
+	/usr/local/bin/python3.6 get-pip.py
+	ln -s /usr/local/bin/pip2.7 /usr/bin/pip2
+	ln -s /usr/local/bin/pip3.6 /usr/bin/pip3
+	pip2 install -U pip setuptools
+	pip3 install -U pip setuptools
+	rm -f get-pip.py
+	rm -rf Python-*
 	
-    # install docker
-    curl -fsSL https://get.docker.com -o get-docker.sh
+	echo "##################### Ip forward enabled ##################### "
+	sudo bash -c " echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf"
+    sudo sysctl -p
+	
+	echo "##################### Loading modules ##################### "
+	modprobe dm_snapshot
+	modprobe dm_mirror
+	modprobe dm_thin_pool
+	modprobe br_netfilter
+	modprobe fuse
+	echo dm_snapshot | sudo tee -a /etc/modules
+	echo dm_mirror | sudo tee -a /etc/modules
+	echo dm_thin_pool | sudo tee -a /etc/modules
+	echo br_netfilter | sudo tee -a /etc/modules
+	echo fuse | sudo tee -a /etc/modules
+	
+	echo "##################### Add SELinux booleans for fuse... ##################### "
+	setsebool -P virt_use_fusefs 1
+	setsebool -P virt_sandbox_use_fusefs 1
+	
+	echo "##################### Ensure firewalld.service ##################### "
+	systemctl start firewalld.service
+	systemctl enable firewalld.service
+	firewall-cmd --zone=trusted --add-port=24007-24008/tcp --permanent
+    firewall-cmd --zone=trusted --add-port=24009/tcp --permanent
+    firewall-cmd --zone=trusted --add-service=nfs --add-service=samba --add-service=samba-client --permanent
+    firewall-cmd --zone=trusted --add-port=111/tcp --add-port=139/tcp --add-port=445/tcp --add-port=965/tcp --add-port=2049/tcp --add-port=38465-38469/tcp --add-port=631/tcp --add-port=111/udp --add-port=963/udp --add-port=49152-49251/tcp --permanent
+	firewall-cmd --permanent --zone=trusted --add-port=8080/tcp
+	firewall-cmd --permanent --zone=trusted --add-port=8081/tcp
+	firewall-cmd --add-service=ssh --permanent
+    firewall-cmd --permanent --zone=trusted --add-interface=eth1
+	firewall-cmd --permanent --zone=trusted --add-interface=weave
+	firewall-cmd --permanent --zone=trusted --add-source=172.42.42.0/24
+	firewall-cmd --permanent --zone=trusted --add-source=192.168.205.0/24
+	firewall-cmd --permanent --zone=trusted --add-source=10.32.0.0/12
+	firewall-cmd --permanent --zone=trusted --add-source=10.244.0.0/16
+	firewall-cmd --permanent --zone=trusted --add-port=10250/tcp
+	firewall-cmd --permanent --zone=trusted --add-port=10251/tcp
+	firewall-cmd --permanent --zone=trusted --add-port=10252/tcp
+	firewall-cmd --permanent --zone=trusted --add-port=6443/tcp
+	firewall-cmd --permanent --zone=trusted --add-port=9898/tcp
+	firewall-cmd --zone=trusted --add-port=2379-2380/tcp --permanent
+	firewall-cmd --zone=trusted --add-port=30000-32767/tcp --permanent
+	firewall-cmd --reload
+	
+	echo "##################### Configure bridge iptables ##################### "
+	sysctl net.bridge.bridge-nf-call-iptables=1
+	sysctl net.bridge.bridge-nf-call-ip6tables=1
+#	cat <<EOF > /etc/sysctl.d/k8s.conf
+#	net.bridge.bridge-nf-call-ip6tables = 1
+#	net.bridge.bridge-nf-call-iptables = 1
+#EOF
+	sysctl --system
+	
+    echo "##################### Install docker ##################### "
+	curl -fsSL https://get.docker.com -o get-docker.sh
     sh ./get-docker.sh
 	rm get-docker.sh
-	
-    # run docker commands as vagrant user (sudo not required)
-    usermod -aG docker vagrantconfigureBox
-	
-	sysctl net.bridge.bridge-nf-call-iptables=1
-	
-	# ensure legacy binaries are installed
-	sudo apt-get install -y iptables arptables ebtables
+	usermod -aG docker vagrant
 
-	# switch to legacy versions
-	sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
-	sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
-	sudo update-alternatives --set arptables /usr/sbin/arptables-legacy
-	sudo update-alternatives --set ebtables /usr/sbin/ebtables-legacy
-
-    # install kubeadm
-    apt-get install -y apt-transport-https curl
-    curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-    cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-    deb http://apt.kubernetes.io/ kubernetes-xenial main
-EOF
-    apt-get update
-    apt-get install -y kubelet kubeadm kubectl
-    apt-mark hold kubelet kubeadm kubectl
-
-    # kubelet requires swap off
+	echo "##################### kubelet requires swap off ##################### "
     swapoff -a
-
-    # keep swap off after reboot
     sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
-    sudo systemctl restart kubelet
-		
-	# Enable user/password login and reset password
+	
+	echo "##################### Set SELinux in permissive mode (effectively disabling it) ##################### "
+	setenforce 0
+	sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+	
+	echo "##################### Install kubelet kubeadm kubectl ##################### "
+cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+[kubernetes]
+name=Kubernetes
+baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+enabled=1
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+EOF
+
+	yum -y update
+	yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
+	systemctl enable --now kubelet
+	systemctl start kubelet.service
+    
+	echo "##################### Enable user/password login and reset password ##################### "
 	sed -i "s/.*PasswordAuthentication.*/PasswordAuthentication yes/g" /etc/ssh/sshd_config
 	sed -i "s/.*PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config
 	echo "vagrant:changeme" | sudo chpasswd
 	echo "root:changeme" | sudo chpasswd
 	service sshd restart
 	
+	echo "##################### Set etc/hosts ##################### " 
 	echo "192.168.205.10 master master" >> /etc/hosts
 	echo "192.168.205.11 node0 node0" >> /etc/hosts
 	echo "192.168.205.12 node1 node1" >> /etc/hosts
 	echo "192.168.205.13 node2 node2" >> /etc/hosts
 	
+	echo "##################### Create heketi folders ##################### " 
 	mkdir -p /data/heketi/{db,.ssh} && chmod 700 /data/heketi/.ssh
 	
-	apt-get install python-minimal -y
-	
+	echo "##################### Clone Vicente Repos ##################### "
 	git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster
 	git clone https://github.com/vmartinvega-pivotal/gluster-kubernetes
 	
 	sudo chown -R vagrant:vagrant kubernetes-cluster
 	sudo chown -R vagrant:vagrant gluster-kubernetes
+	chmod +x kubernetes-cluster/passwordless.sh
+	chmod +x kubernetes-cluster/install-heketi-cli.sh
+	chmod +x kubernetes-cluster/configure-glusterfs.sh
 	
 SCRIPT
 
@@ -120,10 +199,6 @@ $configureMaster = <<-SCRIPT
 	echo "#######################"
 	echo ""
 	echo ""
-
-    # Ip forward enabled
-	sudo bash -c " echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf"
-    sudo sysctl -p
 
     # ip of this box
     IP_ADDR=`ifconfig enp0s8 | grep Mask | awk '{print $2}'| cut -f2 -d:`
@@ -166,11 +241,8 @@ $configureNode = <<-SCRIPT
 	echo ""
 	echo ""
 	
-	apt-get install -y sshpass
-	
 	# Install glusterFS
-	apt-get install xfsprogs attr -y
-	apt-get install glusterfs-server glusterfs-client glusterfs-common -y
+	yum install glusterfs-server glusterfs-client glusterfs-common -y
 	systemctl enable glusterfs-server
 	
 	mkfs.xfs /dev/sdc
@@ -186,15 +258,7 @@ $configureNode = <<-SCRIPT
 	mount -a
 	
 	mkdir /gluster/{c,d,e}/brick
-	
-	modprobe dm_snapshot
-	modprobe dm_mirror
-	modprobe dm_thin_pool
-	
-	echo dm_snapshot | sudo tee -a /etc/modules
-	echo dm_mirror | sudo tee -a /etc/modules
-	echo dm_thin_pool | sudo tee -a /etc/modules
-	
+		
 	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
 
     sh ./kubeadm_join_cmd.sh
@@ -207,7 +271,7 @@ Vagrant.configure("2") do |config|
         config.vm.define opts[:name] do |config|
 
             config.vm.box = opts[:box]
-            config.vm.box_version = opts[:box_version]
+			config.vm.box_version = opts[:box_version]
             config.vm.hostname = opts[:name]
             config.vm.network :private_network, ip: opts[:eth1]
 
