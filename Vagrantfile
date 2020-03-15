@@ -108,7 +108,6 @@ $configureBox = <<-SCRIPT
     firewall-cmd --zone=trusted --add-port=111/tcp --add-port=139/tcp --add-port=445/tcp --add-port=965/tcp --add-port=2049/tcp --add-port=38465-38469/tcp --add-port=631/tcp --add-port=111/udp --add-port=963/udp --add-port=49152-49251/tcp --permanent
 	firewall-cmd --permanent --zone=trusted --add-port=8080/tcp
 	firewall-cmd --permanent --zone=trusted --add-port=8081/tcp
-	firewall-cmd --add-service=ssh --permanent
     firewall-cmd --permanent --zone=trusted --add-interface=eth1
 	firewall-cmd --permanent --zone=trusted --add-interface=weave
 	firewall-cmd --permanent --zone=trusted --add-source=172.42.42.0/24
@@ -287,13 +286,14 @@ Vagrant.configure("2") do |config|
 				# Añadimos discos a lso nodos (no al master)
 				DISKS = 3
 				NAME = opts[:name]
+				v.customize [ "storagectl", :id, "--add", "scsi", "--controller", "LSILogic", "--name", "SCSI" ]
 				(0..DISKS-1).each do |d|
-					if opts[:type] == "node"
+					#if opts[:type] == "node"
 						unless File.exist?("disk-#{NAME}-#{d}.vdi")
 							v.customize [ "createmedium", "--filename", "disk-#{NAME}-#{d}.vdi", "--size", 1024*1024 ]
 						end
 						v.customize [ "storageattach", :id, "--storagectl", "SCSI", "--port", 3+d, "--device", 0, "--type", "hdd", "--medium", "disk-#{NAME}-#{d}.vdi" ]
-					end
+					#end
 				end
             end
 			
