@@ -53,7 +53,7 @@ $configureBox = <<-SCRIPT
 	echo "##################### Install basic packages ##################### "
 	yum install epel-release -y
 	yum install glusterfs-client -y
-	yum install -y gluster-client gcc zlib zlib-devel openssl openssl-devel net-tools sshpass vim git screen iptables iptables-utils iptables-services wget
+	yum install -y gluster-client glusterfs-cli gcc zlib zlib-devel openssl openssl-devel net-tools sshpass vim git screen iptables iptables-utils iptables-services wget
 	
 	echo "##################### Install Python 2.7.13 and 3.6.2 ##################### "
 	wget https://www.python.org/ftp/python/2.7.13/Python-2.7.13.tgz
@@ -124,12 +124,10 @@ $configureBox = <<-SCRIPT
 	firewall-cmd --reload
 	
 	echo "##################### Configure bridge iptables ##################### "
-	sysctl net.bridge.bridge-nf-call-iptables=1
-	sysctl net.bridge.bridge-nf-call-ip6tables=1
-#	cat <<EOF > /etc/sysctl.d/k8s.conf
-#	net.bridge.bridge-nf-call-ip6tables = 1
-#	net.bridge.bridge-nf-call-iptables = 1
-#EOF
+cat <<EOF > /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
 	sysctl --system
 	
     echo "##################### Install docker ##################### "
@@ -243,7 +241,7 @@ $configureNode = <<-SCRIPT
 	echo ""
 	
 	# Install glusterFS
-	yum install glusterfs-server glusterfs-client glusterfs-common -y
+	yum install glusterfs-server glusterfs-client glusterfs-common glusterfs-cli -y
 	systemctl enable glusterfs-server
 	
 	mkfs.xfs /dev/sdc
