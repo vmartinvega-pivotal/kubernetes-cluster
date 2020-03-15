@@ -138,6 +138,8 @@ $configureBox = <<-SCRIPT
     sh ./get-docker.sh
 	rm get-docker.sh
 	usermod -aG docker vagrant
+	systemctl enable docker.service
+	systemctl start docker.service
 
 	echo "##################### kubelet requires swap off ##################### "
     swapoff -a
