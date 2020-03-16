@@ -52,9 +52,9 @@ $configureBox = <<-SCRIPT
 
 	echo "##################### Install basic packages ##################### "
 	yum install epel-release -y
-	yum install glusterfs-client -y
-	yum install -y gluster-client glusterfs-cli gcc zlib zlib-devel openssl openssl-devel net-tools sshpass vim git screen iptables iptables-utils iptables-services wget
-	
+	yum install centos-release-gluster7 -y
+	yum install glusterfs gcc zlib zlib-devel openssl openssl-devel net-tools sshpass vim git screen iptables iptables-utils iptables-services wget -y
+		
 	echo "##################### Install Python 2.7.13 and 3.6.2 ##################### "
 	wget https://www.python.org/ftp/python/2.7.13/Python-2.7.13.tgz
 	wget https://www.python.org/ftp/python/3.6.2/Python-3.6.2.tgz
@@ -100,28 +100,29 @@ $configureBox = <<-SCRIPT
 	setsebool -P virt_sandbox_use_fusefs 1
 	
 	echo "##################### Ensure firewalld.service ##################### "
-	systemctl start firewalld.service
-	systemctl enable firewalld.service
-	firewall-cmd --zone=trusted --add-port=24007-24008/tcp --permanent
-    firewall-cmd --zone=trusted --add-port=24009/tcp --permanent
-    firewall-cmd --zone=trusted --add-service=nfs --add-service=samba --add-service=samba-client --permanent
-    firewall-cmd --zone=trusted --add-port=111/tcp --add-port=139/tcp --add-port=445/tcp --add-port=965/tcp --add-port=2049/tcp --add-port=38465-38469/tcp --add-port=631/tcp --add-port=111/udp --add-port=963/udp --add-port=49152-49251/tcp --permanent
-	firewall-cmd --permanent --zone=trusted --add-port=8080/tcp
-	firewall-cmd --permanent --zone=trusted --add-port=8081/tcp
-    firewall-cmd --permanent --zone=trusted --add-interface=eth1
-	firewall-cmd --permanent --zone=trusted --add-interface=weave
-	firewall-cmd --permanent --zone=trusted --add-source=172.42.42.0/24
-	firewall-cmd --permanent --zone=trusted --add-source=192.168.205.0/24
-	firewall-cmd --permanent --zone=trusted --add-source=10.32.0.0/12
-	firewall-cmd --permanent --zone=trusted --add-source=10.244.0.0/16
-	firewall-cmd --permanent --zone=trusted --add-port=10250/tcp
-	firewall-cmd --permanent --zone=trusted --add-port=10251/tcp
-	firewall-cmd --permanent --zone=trusted --add-port=10252/tcp
-	firewall-cmd --permanent --zone=trusted --add-port=6443/tcp
-	firewall-cmd --permanent --zone=trusted --add-port=9898/tcp
-	firewall-cmd --zone=trusted --add-port=2379-2380/tcp --permanent
-	firewall-cmd --zone=trusted --add-port=30000-32767/tcp --permanent
-	firewall-cmd --reload
+	systemctl stop firewalld.service
+	systemctl disable firewalld.service
+	
+	#firewall-cmd --zone=public --add-port=24007-24008/tcp --permanent
+    #firewall-cmd --zone=public --add-port=24009/tcp --permanent
+    #firewall-cmd --zone=public --add-service=nfs --add-service=samba --add-service=samba-client --permanent
+    #firewall-cmd --zone=public --add-port=111/tcp --add-port=139/tcp --add-port=445/tcp --add-port=965/tcp --add-port=2049/tcp --add-port=38465-38469/tcp --add-port=631/tcp --add-port=111/udp --add-port=963/udp --add-port=49152-49251/tcp --permanent
+	#firewall-cmd --permanent --zone=public --add-port=8080/tcp
+	#firewall-cmd --permanent --zone=public --add-port=8081/tcp
+    #firewall-cmd --permanent --zone=public --add-interface=eth1
+	#firewall-cmd --permanent --zone=public --add-interface=weave
+	#firewall-cmd --permanent --zone=public --add-source=172.42.42.0/24
+	#firewall-cmd --permanent --zone=public --add-source=192.168.205.0/24
+	#firewall-cmd --permanent --zone=public --add-source=10.32.0.0/12
+	#firewall-cmd --permanent --zone=public --add-source=10.244.0.0/16
+	#firewall-cmd --permanent --zone=public --add-port=10250/tcp
+	#firewall-cmd --permanent --zone=public --add-port=10251/tcp
+	#firewall-cmd --permanent --zone=public --add-port=10252/tcp
+	#firewall-cmd --permanent --zone=public --add-port=6443/tcp
+	#firewall-cmd --permanent --zone=public --add-port=9898/tcp
+	#firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
+	#firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+	#firewall-cmd --reload
 	
 	echo "##################### Configure bridge iptables ##################### "
 cat <<EOF > /etc/sysctl.d/k8s.conf
@@ -198,6 +199,8 @@ $configureMaster = <<-SCRIPT
 	echo "#######################"
 	echo ""
 	echo ""
+	
+	yum install heketi-client
 
     # ip of this box
     IP_ADDR=`ifconfig enp0s8 | grep Mask | awk '{print $2}'| cut -f2 -d:`
@@ -241,9 +244,10 @@ $configureNode = <<-SCRIPT
 	echo ""
 	
 	# Install glusterFS
-	yum install glusterfs-server glusterfs-client glusterfs-common glusterfs-cli -y
-	systemctl enable glusterfs-server
-	
+	yum install glusterfs glusterfs-libs glusterfs-server glusterfs-common -y 
+	systemctl start glusterfsd.service
+	systemctl enable glusterfsd.service
+		
 	mkfs.xfs /dev/sdc
 	mkfs.xfs /dev/sdd
 	mkfs.xfs /dev/sde
