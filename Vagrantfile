@@ -248,22 +248,22 @@ $configureNode = <<-SCRIPT
 	
 	echo "##################### Install glusterFS ##################### "
 	yum install glusterfs glusterfs-libs glusterfs-server glusterfs-common -y 
-	systemctl start glusterfsd.service
-	systemctl enable glusterfsd.service
+	systemctl start glusterd.service
+	systemctl enable glusterd.service
 		
+	mkfs.xfs /dev/sdb
 	mkfs.xfs /dev/sdc
 	mkfs.xfs /dev/sdd
-	mkfs.xfs /dev/sde
 	
-	mkdir -p /gluster/{c,d,e}
+	mkdir -p /gluster/{b,c,d}
 	
-	su -c 'echo "/dev/sdc /gluster/c xfs defaults 0 0" >> /etc/fstab'
-	su -c 'echo "/dev/sdd /gluster/d xfs defaults 0 0" >> /etc/fstab'
-	su -c 'echo "/dev/sde /gluster/e xfs defaults 0 0" >> /etc/fstab'
+	su -c 'echo "/dev/sdb /gluster/c xfs defaults 0 0" >> /etc/fstab'
+	su -c 'echo "/dev/sdc /gluster/d xfs defaults 0 0" >> /etc/fstab'
+	su -c 'echo "/dev/sdd /gluster/e xfs defaults 0 0" >> /etc/fstab'
 	
 	mount -a
 	
-	mkdir /gluster/{c,d,e}/brick
+	mkdir /gluster/{b,c,d}/brick
 		
 	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
 
