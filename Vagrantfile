@@ -54,31 +54,7 @@ $configureBox = <<-SCRIPT
 	yum install epel-release -y
 	yum install centos-release-gluster7 -y
 	yum install glusterfs glusterfs-fuse gcc zlib zlib-devel openssl openssl-devel net-tools sshpass vim git screen iptables iptables-utils iptables-services wget nano -y
-		
-	echo "##################### Install Python 2.7.13 and 3.6.2 ##################### "
-	#wget https://www.python.org/ftp/python/2.7.13/Python-2.7.13.tgz
-	#wget https://www.python.org/ftp/python/3.6.2/Python-3.6.2.tgz
-	#tar -xvf Python-2.7.13.tgz
-	#tar -xvf Python-3.6.2.tgz
-	#cd Python-2.7.13
-	#./configure --prefix=/usr/local
-	#make altinstall
-	#cd ..
-	#cd Python-3.6.2
-	#./configure --prefix=/usr/local
-	#make altinstall
-	#cd ..
-	#ln -s /usr/local/bin/python3.6 /usr/bin/python3.6
-	#wget "https://bootstrap.pypa.io/get-pip.py"
-	#/usr/local/bin/python2.7 get-pip.py
-	#/usr/local/bin/python3.6 get-pip.py
-	#ln -s /usr/local/bin/pip2.7 /usr/bin/pip2
-	#ln -s /usr/local/bin/pip3.6 /usr/bin/pip3
-	#pip2 install -U pip setuptools
-	#pip3 install -U pip setuptools
-	#rm -f get-pip.py
-	#rm -rf Python-*
-	
+
 	echo "##################### Ip forward enabled ##################### "
 	sudo bash -c " echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf"
     sudo sysctl -p
@@ -102,28 +78,7 @@ $configureBox = <<-SCRIPT
 	echo "##################### Ensure firewalld.service ##################### "
 	systemctl stop firewalld.service
 	systemctl disable firewalld.service
-	
-	#firewall-cmd --zone=public --add-port=24007-24008/tcp --permanent
-    #firewall-cmd --zone=public --add-port=24009/tcp --permanent
-    #firewall-cmd --zone=public --add-service=nfs --add-service=samba --add-service=samba-client --permanent
-    #firewall-cmd --zone=public --add-port=111/tcp --add-port=139/tcp --add-port=445/tcp --add-port=965/tcp --add-port=2049/tcp --add-port=38465-38469/tcp --add-port=631/tcp --add-port=111/udp --add-port=963/udp --add-port=49152-49251/tcp --permanent
-	#firewall-cmd --permanent --zone=public --add-port=8080/tcp
-	#firewall-cmd --permanent --zone=public --add-port=8081/tcp
-    #firewall-cmd --permanent --zone=public --add-interface=eth1
-	#firewall-cmd --permanent --zone=public --add-interface=weave
-	#firewall-cmd --permanent --zone=public --add-source=172.42.42.0/24
-	#firewall-cmd --permanent --zone=public --add-source=192.168.205.0/24
-	#firewall-cmd --permanent --zone=public --add-source=10.32.0.0/12
-	#firewall-cmd --permanent --zone=public --add-source=10.244.0.0/16
-	#firewall-cmd --permanent --zone=public --add-port=10250/tcp
-	#firewall-cmd --permanent --zone=public --add-port=10251/tcp
-	#firewall-cmd --permanent --zone=public --add-port=10252/tcp
-	#firewall-cmd --permanent --zone=public --add-port=6443/tcp
-	#firewall-cmd --permanent --zone=public --add-port=9898/tcp
-	#firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
-	#firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
-	#firewall-cmd --reload
-	
+
 	echo "##################### Configure bridge iptables ##################### "
 cat <<EOF > /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
