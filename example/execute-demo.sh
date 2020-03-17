@@ -13,12 +13,7 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-kubectl label node node0 storagenode=glusterfs
-kubectl label node node1 storagenode=glusterfs
-kubectl label node node2 storagenode=glusterfs
-
-ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node0"
-ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node1"
-ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node2"
-
+kubectl create -f secret.yaml
+kubectl create -f storage-class.yaml
+kubectl create -f pvc.yaml
+kubectl create -f pod.yaml

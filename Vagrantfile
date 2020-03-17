@@ -180,7 +180,8 @@ EOF
 	git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster
 	
 	sudo chown -R vagrant:vagrant kubernetes-cluster
-	chmod +x kubernetes-cluster/setup-heketi.sh
+	chmod +x kubernetes-cluster/heketi/setup-heketi.sh
+	chmod +x kubernetes-cluster/example/execute-demo.sh
 	
 SCRIPT
 
@@ -240,26 +241,6 @@ $configureNode = <<-SCRIPT
 	yum install glusterfs glusterfs-fuse glusterfs-libs glusterfs-server glusterfs-common -y 
 	systemctl start glusterd.service
 	systemctl enable glusterd.service
-
-	#mkfs.xfs /dev/sdb
-	#mkfs.xfs /dev/sdc
-	#mkfs.xfs /dev/sdd
-	
-	#mkdir -p /gluster/{b,c,d}
-	
-	#su -c 'echo "/dev/sdb /gluster/b xfs defaults 0 0" >> /etc/fstab'
-	#su -c 'echo "/dev/sdc /gluster/c xfs defaults 0 0" >> /etc/fstab'
-	#su -c 'echo "/dev/sdd /gluster/d xfs defaults 0 0" >> /etc/fstab'
-	
-	#mount -a
-	
-	#mkdir /gluster/{b,c,d}/brick
-	
-	wipefs -a /dev/sdb
-	wipefs -a /dev/sdc
-	wipefs -a /dev/sdd
-	setsebool -P virt_use_fusefs on 
-	setsebool -P virt_sandbox_use_fusefs on
 		
 	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
 
