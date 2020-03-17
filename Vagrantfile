@@ -53,31 +53,31 @@ $configureBox = <<-SCRIPT
 	echo "##################### Install basic packages ##################### "
 	yum install epel-release -y
 	yum install centos-release-gluster7 -y
-	yum install glusterfs gcc zlib zlib-devel openssl openssl-devel net-tools sshpass vim git screen iptables iptables-utils iptables-services wget -y
+	yum install glusterfs glusterfs-fuse gcc zlib zlib-devel openssl openssl-devel net-tools sshpass vim git screen iptables iptables-utils iptables-services wget nano -y
 		
 	echo "##################### Install Python 2.7.13 and 3.6.2 ##################### "
-	wget https://www.python.org/ftp/python/2.7.13/Python-2.7.13.tgz
-	wget https://www.python.org/ftp/python/3.6.2/Python-3.6.2.tgz
-	tar -xvf Python-2.7.13.tgz
-	tar -xvf Python-3.6.2.tgz
-	cd Python-2.7.13
-	./configure --prefix=/usr/local
-	make altinstall
-	cd ..
-	cd Python-3.6.2
-	./configure --prefix=/usr/local
-	make altinstall
-	cd ..
-	ln -s /usr/local/bin/python3.6 /usr/bin/python3.6
-	wget "https://bootstrap.pypa.io/get-pip.py"
-	/usr/local/bin/python2.7 get-pip.py
-	/usr/local/bin/python3.6 get-pip.py
-	ln -s /usr/local/bin/pip2.7 /usr/bin/pip2
-	ln -s /usr/local/bin/pip3.6 /usr/bin/pip3
-	pip2 install -U pip setuptools
-	pip3 install -U pip setuptools
-	rm -f get-pip.py
-	rm -rf Python-*
+	#wget https://www.python.org/ftp/python/2.7.13/Python-2.7.13.tgz
+	#wget https://www.python.org/ftp/python/3.6.2/Python-3.6.2.tgz
+	#tar -xvf Python-2.7.13.tgz
+	#tar -xvf Python-3.6.2.tgz
+	#cd Python-2.7.13
+	#./configure --prefix=/usr/local
+	#make altinstall
+	#cd ..
+	#cd Python-3.6.2
+	#./configure --prefix=/usr/local
+	#make altinstall
+	#cd ..
+	#ln -s /usr/local/bin/python3.6 /usr/bin/python3.6
+	#wget "https://bootstrap.pypa.io/get-pip.py"
+	#/usr/local/bin/python2.7 get-pip.py
+	#/usr/local/bin/python3.6 get-pip.py
+	#ln -s /usr/local/bin/pip2.7 /usr/bin/pip2
+	#ln -s /usr/local/bin/pip3.6 /usr/bin/pip3
+	#pip2 install -U pip setuptools
+	#pip3 install -U pip setuptools
+	#rm -f get-pip.py
+	#rm -rf Python-*
 	
 	echo "##################### Ip forward enabled ##################### "
 	sudo bash -c " echo 'net.ipv4.ip_forward = 1' >> /etc/sysctl.conf"
@@ -175,19 +175,12 @@ EOF
 	echo "192.168.205.11 node0 node0" >> /etc/hosts
 	echo "192.168.205.12 node1 node1" >> /etc/hosts
 	echo "192.168.205.13 node2 node2" >> /etc/hosts
-	
-	echo "##################### Create heketi folders ##################### " 
-	mkdir -p /data/heketi/{db,.ssh} && chmod 700 /data/heketi/.ssh
-	
+
 	echo "##################### Clone Vicente Repos ##################### "
 	git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster
-	git clone https://github.com/vmartinvega-pivotal/gluster-kubernetes
 	
 	sudo chown -R vagrant:vagrant kubernetes-cluster
-	sudo chown -R vagrant:vagrant gluster-kubernetes
-	chmod +x kubernetes-cluster/passwordless.sh
-	chmod +x kubernetes-cluster/install-heketi-cli.sh
-	chmod +x kubernetes-cluster/configure-glusterfs.sh
+	chmod +x kubernetes-cluster/setup-heketi.sh
 	
 SCRIPT
 
@@ -199,9 +192,6 @@ $configureMaster = <<-SCRIPT
 	echo "#######################"
 	echo ""
 	echo ""
-	
-	echo "##################### install heketi-client ##################### "
-	yum install heketi-client
 
     # ip of this box
     IP_ADDR=`ifconfig eth1 | grep netmask | awk '{print $2}'| cut -f2 -d:`
@@ -247,23 +237,23 @@ $configureNode = <<-SCRIPT
 	echo ""
 	
 	echo "##################### Install glusterFS ##################### "
-	yum install glusterfs glusterfs-libs glusterfs-server glusterfs-common -y 
+	yum install glusterfs glusterfs-fuse glusterfs-libs glusterfs-server glusterfs-common -y 
 	systemctl start glusterd.service
 	systemctl enable glusterd.service
-		
-	mkfs.xfs /dev/sdb
-	mkfs.xfs /dev/sdc
-	mkfs.xfs /dev/sdd
+
+	#mkfs.xfs /dev/sdb
+	#mkfs.xfs /dev/sdc
+	#mkfs.xfs /dev/sdd
 	
-	mkdir -p /gluster/{b,c,d}
+	#mkdir -p /gluster/{b,c,d}
 	
-	su -c 'echo "/dev/sdb /gluster/c xfs defaults 0 0" >> /etc/fstab'
-	su -c 'echo "/dev/sdc /gluster/d xfs defaults 0 0" >> /etc/fstab'
-	su -c 'echo "/dev/sdd /gluster/e xfs defaults 0 0" >> /etc/fstab'
+	#su -c 'echo "/dev/sdb /gluster/b xfs defaults 0 0" >> /etc/fstab'
+	#su -c 'echo "/dev/sdc /gluster/c xfs defaults 0 0" >> /etc/fstab'
+	#su -c 'echo "/dev/sdd /gluster/d xfs defaults 0 0" >> /etc/fstab'
 	
-	mount -a
+	#mount -a
 	
-	mkdir /gluster/{b,c,d}/brick
+	#mkdir /gluster/{b,c,d}/brick
 		
 	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
 
