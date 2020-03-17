@@ -7,7 +7,7 @@ servers = [
         :type => "master",
         :box => "centos/7",
         :box_version => "1905.1",
-        :eth1 => "192.168.205.10",
+        :eth1 => "122.168.205.10",
         :mem => "2048",
         :cpu => "2"
     },
@@ -16,7 +16,7 @@ servers = [
         :type => "node",
         :box => "centos/7",
         :box_version => "1905.1",
-        :eth1 => "192.168.205.11",
+        :eth1 => "122.168.205.11",
         :mem => "4096",
         :cpu => "4"
     },
@@ -25,7 +25,7 @@ servers = [
         :type => "node",
         :box => "centos/7",
         :box_version => "1905.1",
-        :eth1 => "192.168.205.12",
+        :eth1 => "122.168.205.12",
         :mem => "4096",
         :cpu => "4"
     },
@@ -34,7 +34,7 @@ servers = [
         :type => "node",
         :box => "centos/7",
         :box_version => "1905.1",
-        :eth1 => "192.168.205.13",
+        :eth1 => "122.168.205.13",
         :mem => "4096",
         :cpu => "4"
     }
@@ -76,9 +76,33 @@ $configureBox = <<-SCRIPT
 	setsebool -P virt_sandbox_use_fusefs 1
 	
 	echo "##################### Ensure firewalld.service ##################### "
-	systemctl stop firewalld.service
-	systemctl disable firewalld.service
+	systemctl start firewalld.service
+	systemctl enable firewalld.service
 
+	firewall-cmd --zone=public --add-port=24007-24008/tcp --permanent
+    firewall-cmd --zone=public --add-port=24009/tcp --permanent
+    firewall-cmd --zone=public --add-service=nfs --add-service=samba --add-service=samba-client --permanent
+    firewall-cmd --zone=public --add-port=111/tcp --add-port=139/tcp --add-port=445/tcp --add-port=965/tcp --add-port=2049/tcp --add-port=38465-38469/tcp --add-port=631/tcp --add-port=111/udp --add-port=963/udp --add-port=49152-49251/tcp --permanent
+	firewall-cmd --permanent --zone=public --add-port=8080/tcp
+	firewall-cmd --permanent --zone=public --add-port=8081/tcp
+    firewall-cmd --permanent --zone=public --add-interface=eth1
+	firewall-cmd --permanent --zone=public --add-interface=weave
+	firewall-cmd --permanent --zone=public --add-source=172.42.42.0/24
+	firewall-cmd --permanent --zone=public --add-source=10.32.0.0/12
+	firewall-cmd --permanent --zone=public --add-source=192.168.0.0/16
+	firewall-cmd --permanent --zone=public --add-source=122.168.0.0/16
+	firewall-cmd --permanent --zone=public --add-source=10.244.0.0/16
+	firewall-cmd --permanent --zone=public --add-port=10250/tcp
+	firewall-cmd --permanent --zone=public --add-port=8285/udp
+	firewall-cmd --permanent --zone=public --add-port=8472/udp
+	firewall-cmd --permanent --zone=public --add-port=10251/tcp
+	firewall-cmd --permanent --zone=public --add-port=10252/tcp
+	firewall-cmd --permanent --zone=public --add-port=6443/tcp
+	firewall-cmd --permanent --zone=public --add-port=9898/tcp
+	firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
+	firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
+	firewall-cmd --reload
+	
 	echo "##################### Configure bridge iptables ##################### "
 cat <<EOF > /etc/sysctl.d/k8s.conf
 net.bridge.bridge-nf-call-ip6tables = 1
@@ -126,10 +150,10 @@ EOF
 	service sshd restart
 	
 	echo "##################### Set etc/hosts ##################### " 
-	echo "192.168.205.10 master master" >> /etc/hosts
-	echo "192.168.205.11 node0 node0" >> /etc/hosts
-	echo "192.168.205.12 node1 node1" >> /etc/hosts
-	echo "192.168.205.13 node2 node2" >> /etc/hosts
+	echo "122.168.205.10 master master" >> /etc/hosts
+	echo "122.168.205.11 node0 node0" >> /etc/hosts
+	echo "122.168.205.12 node1 node1" >> /etc/hosts
+	echo "122.168.205.13 node2 node2" >> /etc/hosts
 
 	echo "##################### Clone Vicente Repos ##################### "
 	git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster
@@ -156,8 +180,9 @@ $configureMaster = <<-SCRIPT
     HOST_NAME=$(hostname -s)
     
 	echo "##################### Install k8s master (kubeadm) ##################### "
+	#kubeadm init --apiserver-advertise-address=$IP_ADDR --apiserver-cert-extra-sans=$IP_ADDR  --node-name $HOST_NAME --pod-network-cidr=192.168.0.0/16
 	kubeadm init --apiserver-advertise-address=$IP_ADDR --apiserver-cert-extra-sans=$IP_ADDR  --node-name $HOST_NAME --pod-network-cidr=10.244.0.0/16
-    	
+		
 	echo "##################### copying credentials to regular user - vagrant ##################### "
 	sudo -H -u vagrant bash -c 'mkdir -p $HOME/.kube'
     sudo -H -u vagrant bash -c 'sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config'
@@ -166,6 +191,7 @@ $configureMaster = <<-SCRIPT
 	
 	echo "##################### Install flannel ##################### "
 	sudo -H -u vagrant bash -c 'kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml'
+	#sudo -H -u vagrant bash -c 'kubectl apply -f https://docs.projectcalico.org/v3.11/manifests/calico.yaml'
 	
 	# Get token to join the cluster
     kubeadm token create --print-join-command >> /etc/kubeadm_join_cmd.sh
@@ -197,7 +223,7 @@ $configureNode = <<-SCRIPT
 	systemctl start glusterd.service
 	systemctl enable glusterd.service
 		
-	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
+	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@122.168.205.10:/etc/kubeadm_join_cmd.sh .
 
 	echo "##################### Join Node to k8s cluster ##################### "
 	sh ./kubeadm_join_cmd.sh
@@ -226,12 +252,12 @@ Vagrant.configure("2") do |config|
 				NAME = opts[:name]
 				v.customize [ "storagectl", :id, "--add", "scsi", "--controller", "LSILogic", "--name", "SCSI" ]
 				(0..DISKS-1).each do |d|
-					#if opts[:type] == "node"
+					if opts[:type] == "node"
 						unless File.exist?("disk-#{NAME}-#{d}.vdi")
 							v.customize [ "createmedium", "--filename", "disk-#{NAME}-#{d}.vdi", "--size", 1024*1024 ]
 						end
 						v.customize [ "storageattach", :id, "--storagectl", "SCSI", "--port", 3+d, "--device", 0, "--type", "hdd", "--medium", "disk-#{NAME}-#{d}.vdi" ]
-					#end
+					end
 				end
             end
 			
