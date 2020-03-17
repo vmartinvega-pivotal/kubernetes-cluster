@@ -190,7 +190,8 @@ $configureMaster = <<-SCRIPT
 	sudo -H -u vagrant bash -c 'echo "source <(kubectl completion bash)" >> ~/.bashrc'
 	
 	echo "##################### Install flannel ##################### "
-	sudo -H -u vagrant bash -c 'kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml'
+	sudo -H -u vagrant bash -c 'kubectl apply -f /home/vagrant/kubernetes-cluster/kube-flannel.yml'
+	#sudo -H -u vagrant bash -c 'kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml'
 	#sudo -H -u vagrant bash -c 'kubectl apply -f https://docs.projectcalico.org/v3.11/manifests/calico.yaml'
 	
 	# Get token to join the cluster
