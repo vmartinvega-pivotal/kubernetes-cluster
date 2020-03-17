@@ -254,6 +254,12 @@ $configureNode = <<-SCRIPT
 	#mount -a
 	
 	#mkdir /gluster/{b,c,d}/brick
+	
+	wipefs -a /dev/sdb
+	wipefs -a /dev/sdc
+	wipefs -a /dev/sdd
+	setsebool -P virt_use_fusefs on 
+	setsebool -P virt_sandbox_use_fusefs on
 		
 	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@192.168.205.10:/etc/kubeadm_join_cmd.sh .
 
