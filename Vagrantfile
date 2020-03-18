@@ -205,7 +205,7 @@ $configureMaster = <<-SCRIPT
 
 	echo "##################### Install flannel ##################### "
 	#sudo -H -u vagrant bash -c 'kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml'
-	sudo -H -u vagrant bash -c 'kubectl -f /home/vagrant/kubernetes-cluster/kube-flannel.yml'
+	sudo -H -u vagrant bash -c 'kubectl create -f /home/vagrant/kubernetes-cluster/kube-flannel.yml'
 	
 	# Get token to join the cluster
     kubeadm token create --print-join-command >> /etc/kubeadm_join_cmd.sh
