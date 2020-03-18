@@ -170,6 +170,7 @@ EOF
 	
 	sudo chown -R vagrant:vagrant kubernetes-cluster
 	chmod +x kubernetes-cluster/heketi/setup-heketi.sh
+	chmod +x kubernetes-cluster/heketi/passwordless.sh
 	chmod +x kubernetes-cluster/example/execute-demo.sh
 	
 SCRIPT
