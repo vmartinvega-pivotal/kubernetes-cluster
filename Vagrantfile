@@ -7,7 +7,7 @@ servers = [
         :type => "master",
         :box => "centos/7",
         :box_version => "1905.1",
-        :eth1 => "122.168.205.10",
+        :eth1 => "10.0.0.10",
         :mem => "2048",
         :cpu => "2"
     },
@@ -16,7 +16,7 @@ servers = [
         :type => "node",
         :box => "centos/7",
         :box_version => "1905.1",
-        :eth1 => "122.168.205.11",
+        :eth1 => "10.0.0.11",
         :mem => "4096",
         :cpu => "4"
     },
@@ -25,7 +25,7 @@ servers = [
         :type => "node",
         :box => "centos/7",
         :box_version => "1905.1",
-        :eth1 => "122.168.205.12",
+        :eth1 => "10.0.0.12",
         :mem => "4096",
         :cpu => "4"
     },
@@ -34,7 +34,7 @@ servers = [
         :type => "node",
         :box => "centos/7",
         :box_version => "1905.1",
-        :eth1 => "122.168.205.13",
+        :eth1 => "10.0.0.13",
         :mem => "4096",
         :cpu => "4"
     }
@@ -104,10 +104,20 @@ $configureBox = <<-SCRIPT
 	firewall-cmd --reload
 	
 	echo "##################### Configure bridge iptables ##################### "
-cat <<EOF > /etc/sysctl.d/k8s.conf
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-EOF
+#cat <<EOF > /etc/sysctl.d/k8s.conf
+#net.bridge.bridge-nf-call-ip6tables = 1
+#net.bridge.bridge-nf-call-iptables = 1
+#EOF
+#	sysctl --system
+	
+	sysctl net.bridge.bridge-nf-call-iptables=1
+	sysctl net.bridge.bridge-nf-call-ip6tables=1
+	sysctl net.bridge.bridge-nf-call-arptables=1
+	
+	echo 'net.bridge.bridge-nf-call-iptables=1' | sudo tee -a /etc/sysctl.conf
+	echo 'net.bridge.bridge-nf-call-ip6tables=1' | sudo tee -a /etc/sysctl.conf
+	echo 'net.bridge.bridge-nf-call-arptables=1' | sudo tee -a /etc/sysctl.conf
+	
 	sysctl --system
 	
     echo "##################### Install docker ##################### "
@@ -150,10 +160,10 @@ EOF
 	service sshd restart
 	
 	echo "##################### Set etc/hosts ##################### " 
-	echo "122.168.205.10 master master" >> /etc/hosts
-	echo "122.168.205.11 node0 node0" >> /etc/hosts
-	echo "122.168.205.12 node1 node1" >> /etc/hosts
-	echo "122.168.205.13 node2 node2" >> /etc/hosts
+	echo "10.0.0.10 master master" >> /etc/hosts
+	echo "10.0.0.11 node0 node0" >> /etc/hosts
+	echo "10.0.0.12 node1 node1" >> /etc/hosts
+	echo "10.0.0.13 node2 node2" >> /etc/hosts
 
 	echo "##################### Clone Vicente Repos ##################### "
 	git clone https://github.com/vmartinvega-pivotal/kubernetes-cluster
@@ -180,7 +190,6 @@ $configureMaster = <<-SCRIPT
     HOST_NAME=$(hostname -s)
     
 	echo "##################### Install k8s master (kubeadm) ##################### "
-	#kubeadm init --apiserver-advertise-address=$IP_ADDR --apiserver-cert-extra-sans=$IP_ADDR  --node-name $HOST_NAME --pod-network-cidr=192.168.0.0/16
 	kubeadm init --apiserver-advertise-address=$IP_ADDR --apiserver-cert-extra-sans=$IP_ADDR  --node-name $HOST_NAME --pod-network-cidr=10.244.0.0/16
 		
 	echo "##################### copying credentials to regular user - vagrant ##################### "
@@ -189,10 +198,14 @@ $configureMaster = <<-SCRIPT
     sudo -H -u vagrant bash -c 'sudo chown $(id -u):$(id -g) $HOME/.kube/config'
 	sudo -H -u vagrant bash -c 'echo "source <(kubectl completion bash)" >> ~/.bashrc'
 	
+	# Fix kubelet IP
+	echo "KUBELET_EXTRA_ARGS=--node-ip=${IP_ADDR}" > /etc/sysconfig/kubelet
+	systemctl daemon-reload
+	systemctl restart kubelet
+
 	echo "##################### Install flannel ##################### "
-	sudo -H -u vagrant bash -c 'kubectl apply -f /home/vagrant/kubernetes-cluster/kube-flannel.yml'
 	#sudo -H -u vagrant bash -c 'kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/2140ac876ef134e0ed5af15c65e414cf26827915/Documentation/kube-flannel.yml'
-	#sudo -H -u vagrant bash -c 'kubectl apply -f https://docs.projectcalico.org/v3.11/manifests/calico.yaml'
+	sudo -H -u vagrant bash -c 'kubectl -f /home/vagrant/kubernetes-cluster/kube-flannel.yml'
 	
 	# Get token to join the cluster
     kubeadm token create --print-join-command >> /etc/kubeadm_join_cmd.sh
@@ -224,10 +237,17 @@ $configureNode = <<-SCRIPT
 	systemctl start glusterd.service
 	systemctl enable glusterd.service
 		
-	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@122.168.205.10:/etc/kubeadm_join_cmd.sh .
+	sshpass -f <(printf '%s\n' changeme) scp -o StrictHostKeyChecking=no vagrant@10.0.0.10:/etc/kubeadm_join_cmd.sh .
 
 	echo "##################### Join Node to k8s cluster ##################### "
 	sh ./kubeadm_join_cmd.sh
+	
+	# ip of this box
+    IP_ADDR=`ifconfig eth1 | grep netmask | awk '{print $2}'| cut -f2 -d:`
+	
+	echo Environment="KUBELET_EXTRA_ARGS=--node-ip=${IP_ADDR}" | sudo tee -a /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+	sudo systemctl daemon-reload
+	sudo systemctl restart kubelet
 
 SCRIPT
 
