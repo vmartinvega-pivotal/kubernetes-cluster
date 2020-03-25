@@ -78,30 +78,6 @@ $configureBox = <<-SCRIPT
 	echo "##################### Ensure firewalld.service ##################### "
 	systemctl stop firewalld.service
 	systemctl disabled firewalld.service
-
-	#firewall-cmd --zone=public --add-port=24007-24008/tcp --permanent
-    #firewall-cmd --zone=public --add-port=24009/tcp --permanent
-    #firewall-cmd --zone=public --add-service=nfs --add-service=samba --add-service=samba-client --permanent
-    #firewall-cmd --zone=public --add-port=111/tcp --add-port=139/tcp --add-port=445/tcp --add-port=965/tcp --add-port=2049/tcp --add-port=38465-38469/tcp --add-port=631/tcp --add-port=111/udp --add-port=963/udp --add-port=49152-49251/tcp --permanent
-	#firewall-cmd --permanent --zone=public --add-port=8080/tcp
-	#firewall-cmd --permanent --zone=public --add-port=8081/tcp
-    #firewall-cmd --permanent --zone=public --add-interface=eth1
-	#firewall-cmd --permanent --zone=public --add-interface=weave
-	#firewall-cmd --permanent --zone=public --add-source=172.42.42.0/24
-	#firewall-cmd --permanent --zone=public --add-source=10.32.0.0/12
-	#firewall-cmd --permanent --zone=public --add-source=192.168.0.0/16
-	#firewall-cmd --permanent --zone=public --add-source=122.168.0.0/16
-	#firewall-cmd --permanent --zone=public --add-source=10.244.0.0/16
-	#firewall-cmd --permanent --zone=public --add-port=10250/tcp
-	#firewall-cmd --permanent --zone=public --add-port=8285/udp
-	#firewall-cmd --permanent --zone=public --add-port=8472/udp
-	#firewall-cmd --permanent --zone=public --add-port=10251/tcp
-	#firewall-cmd --permanent --zone=public --add-port=10252/tcp
-	#firewall-cmd --permanent --zone=public --add-port=6443/tcp
-	#firewall-cmd --permanent --zone=public --add-port=9898/tcp
-	#firewall-cmd --zone=public --add-port=2379-2380/tcp --permanent
-	#firewall-cmd --zone=public --add-port=30000-32767/tcp --permanent
-	#firewall-cmd --reload
 	
 	echo "##################### Configure bridge iptables ##################### "
 cat <<EOF > /etc/sysctl.d/k8s.conf
@@ -215,6 +191,17 @@ $configureMaster = <<-SCRIPT
 	echo "##################### Removing key authenticacion ##################### "
     sudo sed -i "/^[^#]*PasswordAuthentication[[:space:]]no/c\PasswordAuthentication yes" /etc/ssh/sshd_config
     sudo service sshd restart
+	
+	echo "##################### Install Goland ##################### "
+	curl -O https://dl.google.com/go/go1.14.linux-amd64.tar.gz
+	sudo tar -C /usr/local -xzf go1.14.linux-amd64.tar.gz
+	echo "export GOPATH=$HOME/work" >> ~/.bash_profile
+	echo "export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin" >> ~/.bash_profile
+	source ~/.bash_profile
+	mkdir work
+	
+	curl -O https://github.com/pivotal-cf/pivnet-cli/releases/download/v1.0.1/pivnet-linux-amd64-1.0.1
+	
 	
 	echo "##################### Install helm 3 ##################### "
 	curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
