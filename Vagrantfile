@@ -106,7 +106,9 @@ EOF
 
 	echo "##################### kubelet requires swap off ##################### "
     swapoff -a
-    sudo sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+	sed '/^\/swapfile/s//#&/' /etc/fstab > output
+	rm /etc/fstab
+	mv output /etc/fstab
 	
 	echo "##################### Set SELinux in permissive mode (effectively disabling it) ##################### "
 	setenforce 0
