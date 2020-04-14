@@ -22,4 +22,3 @@ cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKe
 cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@10.0.0.11 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@10.0.0.12 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 cat ~/.ssh/id_rsa.pub | sshpass -f <(printf '%s\n' changeme) ssh -o StrictHostKeyChecking=no vagrant@10.0.0.13 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
-© 2020 GitHub, Inc.
