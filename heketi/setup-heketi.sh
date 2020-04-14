@@ -44,9 +44,11 @@ sudo chown -R heketi:heketi /var/lib/heketi /var/log/heketi /etc/heketi
 sudo systemctl daemon-reload
 sudo systemctl enable --now heketi
 
-
 sudo ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node0"
 sudo ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node1"
 sudo ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node2"
 
 heketi-cli topology load --user admin --secret heketi_admin_secret --json=/etc/heketi/topology.json
+
+kubectl create -f secret.yaml
+kubectl create -f storage-class.yaml
