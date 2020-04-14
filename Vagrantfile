@@ -50,6 +50,9 @@ $configureBox = <<-SCRIPT
 	echo ""
 	echo ""
 
+	echo "##################### Change dns server ##################### "
+	echo "nameserver 8.8.8.8" > /etc/resolv.conf
+
 	echo "##################### Install basic packages ##################### "
 	yum install epel-release -y
 	yum install centos-release-gluster7 -y
