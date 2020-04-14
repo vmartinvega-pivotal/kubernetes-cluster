@@ -15,6 +15,10 @@ Execute the following vagrant command to start a new Kubernetes cluster, this wi
 
 ```
 vagrant up
+# Edit passwordless.sh depending on the number of nodes
+heketi/passwordless.sh (in all nodes as vagrant and root)
+# Edit setup-heketi.sh and topology.json depending on the number of nodes
+heketi/setup-heketi.sh
 ```
 
 You can also start invidual machines by vagrant up k8s-head, vagrant up k8s-node-1 and vagrant up k8s-node-2
