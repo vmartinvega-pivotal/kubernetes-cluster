@@ -1,6 +1,9 @@
 # Kubernetes cluster
 A vagrant script for setting up a Kubernetes cluster using Kubeadm
 
+## Software
+MobaXterm **https://mobaxterm.mobatek.net/**
+
 ## Pre-requisites
 
  * **[Vagrant 2.1.4+](https://www.vagrantup.com)**
@@ -42,22 +45,24 @@ vagrant destroy -f
 ```
 You can destroy individual machines by vagrant destroy k8s-node-1 -f
 
-## openebs and helm tomcat
+## Examples
 
-Install openebs 
+### Jenkins
+**jenkins** folder contains yaml files to deploy jenkins on kubernetes for testing
 ```
-kubectl apply -f https://openebs.github.io/charts/openebs-operator-1.7.0.yaml
+jenkins
 ```
-
-Add the repo
+### Small Demo
+**example** folder contains a very small example using glusterfs 
 ```
-helm repo add bitnami https://charts.bitnami.com/bitnami
-```
-
-```
-helm install my-tomcat --set tomcatUser=manager,tomcatPassword=changeme,persistence.storageClass=openebs-jiva-default,persistence.size=1Gi,service.nodePort=32000,tomcatAllowRemoteManagement=1 bitnami/tomcat
+example/execute-demo.sh
 ```
 
+### Charts
+**charts** folder contains instructions to install different charts on kubernetes
+```
+charts/helm-charts-install.sh
+```
 ## Licensing
 
 [Apache License, Version 2.0](http://opensource.org/licenses/Apache-2.0).
