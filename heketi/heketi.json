@@ -19,11 +19,11 @@
   "jwt": {
     "_admin": "Admin has access to all APIs",
     "admin": {
-      "key": "ivd7dfORN7QNeKVO"
+      "key": "changeme"
     },
     "_user": "User only has access to /volumes endpoint",
     "user": {
-      "key": "gZPgdZ8NtBNj6jfp"
+      "key": "changeme"
     }
   },
 
