@@ -48,7 +48,7 @@ sudo ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node
 sudo ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node1"
 sudo ssh -o StrictHostKeyChecking=no vagrant@node0 "sudo gluster peer probe node2"
 
-heketi-cli topology load --user admin --secret heketi_admin_secret --json=/etc/heketi/topology.json
+heketi-cli topology load --user admin --secret changeme --json=/etc/heketi/topology.json
 
 kubectl create -f heketi-secret.yaml
 kubectl create -f heketi-storage-class.yaml
