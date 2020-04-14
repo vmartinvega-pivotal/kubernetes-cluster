@@ -204,10 +204,7 @@ $configureMaster = <<-SCRIPT
 	echo "export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin" >> ~/.bash_profile
 	source ~/.bash_profile
 	mkdir work
-	
-	curl -O https://github.com/pivotal-cf/pivnet-cli/releases/download/v1.0.1/pivnet-linux-amd64-1.0.1
-	
-	
+
 	echo "##################### Install helm 3 ##################### "
 	curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
     chmod 700 get_helm.sh
@@ -238,7 +235,7 @@ $configureNode = <<-SCRIPT
 	# ip of this box
     IP_ADDR=`ifconfig eth1 | grep netmask | awk '{print $2}'| cut -f2 -d:`
 	
-	echo Environment="KUBELET_EXTRA_ARGS=--node-ip=${IP_ADDR}" | sudo tee -a /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+	echo Environment="KUBELET_EXTRA_ARGS=--node-ip=${IP_ADDR}" | sudo tee -a /usr/lib/systemd/system/kubelet.service.d/10-kubeadm.conf
 	sudo systemctl daemon-reload
 	sudo systemctl restart kubelet
 
@@ -257,7 +254,7 @@ Vagrant.configure("2") do |config|
             config.vm.provider "virtualbox" do |v|
 
                 v.name = opts[:name]
-            	v.customize ["modifyvm", :id, "--groups", "/Vicente"]
+            	v.customize ["modifyvm", :id, "--groups", "/Kubernetes"]
                 v.customize ["modifyvm", :id, "--memory", opts[:mem]]
                 v.customize ["modifyvm", :id, "--cpus", opts[:cpu]]
 				
