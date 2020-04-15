@@ -223,6 +223,8 @@ $configureNode = <<-SCRIPT
 	echo ""
 	
 	echo "##################### Install glusterFS ##################### "
+	yum install epel-release -y
+	yum install centos-release-gluster7 -y
 	yum install glusterfs glusterfs-fuse glusterfs-libs glusterfs-server glusterfs-common -y 
 	systemctl start glusterd.service
 	systemctl enable glusterd.service
@@ -263,12 +265,12 @@ Vagrant.configure("2") do |config|
 				NAME = opts[:name]
 				v.customize [ "storagectl", :id, "--add", "scsi", "--controller", "LSILogic", "--name", "SCSI" ]
 				(0..DISKS-1).each do |d|
-					if opts[:type] == "node"
+					#if opts[:type] == "node"
 						unless File.exist?("disk-#{NAME}-#{d}.vdi")
 							v.customize [ "createmedium", "--filename", "disk-#{NAME}-#{d}.vdi", "--size", 1024*1024 ]
 						end
 						v.customize [ "storageattach", :id, "--storagectl", "SCSI", "--port", 3+d, "--device", 0, "--type", "hdd", "--medium", "disk-#{NAME}-#{d}.vdi" ]
-					end
+					#end
 				end
             end
 			
